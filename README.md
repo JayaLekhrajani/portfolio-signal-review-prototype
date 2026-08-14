@@ -4,6 +4,20 @@ Portfolio Signal Review is a local web prototype for reviewing a demo investment
 
 The app does not connect to Vanguard or any brokerage account. It uses demo position values and enriches mapped ticker symbols with public quote data from a small local Node backend.
 
+## Screenshots
+
+Desktop dashboard:
+
+![Portfolio Signal Review desktop dashboard](docs/screenshots/portfolio-signal-review-desktop.png)
+
+CSV upload flow:
+
+![Portfolio Signal Review CSV upload flow](docs/screenshots/portfolio-signal-review-upload-modal.png)
+
+Mobile layout:
+
+![Portfolio Signal Review mobile layout](docs/screenshots/portfolio-signal-review-mobile.png)
+
 ## What The Prototype Shows
 
 - Demo portfolio overview with current public quote movement
