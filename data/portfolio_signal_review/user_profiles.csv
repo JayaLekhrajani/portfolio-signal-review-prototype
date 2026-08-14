@@ -1,0 +1,6 @@
+profile_id,fake_name,age_band,investing_goal,risk_tolerance,target_stock_pct,target_etf_pct,target_bond_pct,target_cash_pct,review_frequency,advisor_relationship,notes
+USR-001,Maya Chen,45-54,Retirement growth with moderate downside awareness,moderate,20,50,25,5,monthly,Has access to a human financial advisor,Prefers plain-language summaries and does not want trade recommendations
+USR-002,Jordan Ellis,35-44,Long-term retirement accumulation,growth,25,55,15,5,monthly,Advisor available on request,Tolerates volatility but wants alerts for large allocation drift
+USR-003,Samira Patel,55-64,Retirement transition planning,moderate-conservative,15,45,35,5,monthly,Meets advisor quarterly,Wants to know what topics deserve advisor discussion
+USR-004,Elena Brooks,45-54,Balanced retirement savings and risk control,moderate,20,45,30,5,monthly,Advisor available for escalations,Wants concise summaries before making appointments
+USR-005,Marcus Reed,60-69,Capital preservation with some growth,conservative,10,40,45,5,monthly,Works with advisor for portfolio changes,Wants strong refusal behavior for buy/sell questions

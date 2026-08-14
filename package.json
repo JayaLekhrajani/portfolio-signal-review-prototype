@@ -1,0 +1,9 @@
+{
+  "name": "portfolio-signal-review",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portfolio Signal Review prototype with a local quote-enrichment backend.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

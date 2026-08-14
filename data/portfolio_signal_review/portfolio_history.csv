@@ -1,0 +1,6 @@
+history_id,profile_id,period_end,total_value_usd,stock_pct,etf_pct,bond_pct,cash_pct,portfolio_monthly_change_pct,largest_change_holding,prior_attention_label,advisor_contacted,notes
+HIS-001,USR-001,2026-06-30,393600,21.5,49.0,24.1,5.4,1.2,Greenfield Broad Market ETF,No action,false,Portfolio remained close to target with no major alerts
+HIS-002,USR-002,2026-06-30,355200,24.8,57.5,12.6,5.1,3.9,Atlas Small Cap ETF,Watch,false,ETF allocation moved above target but no negative sentiment
+HIS-003,USR-003,2026-06-30,344900,14.2,48.3,32.4,5.1,0.6,Clearwater International ETF,Watch,true,Investor discussed international allocation drift with advisor
+HIS-004,USR-004,2026-06-30,289700,22.1,43.8,29.2,4.9,-1.5,Summit Health Innovators Stock,Advisor review recommended,true,Advisor reviewed high-volatility stock after negative synthetic news
+HIS-005,USR-005,2026-06-30,341400,9.7,44.8,40.6,4.9,2.1,Cascade Technology Leaders ETF,Watch,false,Technology ETF gains increased concentration risk

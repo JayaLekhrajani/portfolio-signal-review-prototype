@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Signal Review</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23071a3b'/%3E%3Cpath d='M6 20h5l3-10 5 14 3-9h4' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Review scenarios">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M4 15.5h3l2.1-7 3.8 11 2.5-8H20" />
+            </svg>
+          </div>
+          <div>
+            <strong>Portfolio Signal Review</strong>
+            <span>Live market triage</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-title">Scenario</div>
+          <button class="scenario active" data-scenario="monthly">
+            <span class="scenario-icon info">M</span>
+            <span>
+              <strong>Monthly review</strong>
+              <small>Demo positions</small>
+            </span>
+          </button>
+          <button class="scenario" data-scenario="advancedUpload">
+            <span class="scenario-icon advanced">A</span>
+            <span>
+              <strong>Advanced demo</strong>
+              <small>Quote-enriched CSV</small>
+            </span>
+          </button>
+          <button class="scenario" data-scenario="sameDropNeutral">
+            <span class="scenario-icon watch">8</span>
+            <span>
+              <strong>8% drop: neutral</strong>
+              <small>Context changes verdict</small>
+            </span>
+          </button>
+          <button class="scenario" data-scenario="sameDropNegative">
+            <span class="scenario-icon alert">8</span>
+            <span>
+              <strong>8% drop: negative</strong>
+              <small>Advisor review case</small>
+            </span>
+          </button>
+          <button class="scenario" data-scenario="missingContext">
+            <span class="scenario-icon missing">?</span>
+            <span>
+              <strong>Missing news feed</strong>
+              <small>Data gap, not Watch</small>
+            </span>
+          </button>
+          <button class="scenario" data-scenario="adviceRequest">
+            <span class="scenario-icon alert">!</span>
+            <span>
+              <strong>Advice request</strong>
+              <small>Boundary refusal</small>
+            </span>
+          </button>
+        </div>
+
+        <div class="sidebar-upload">
+          <button id="openUploadModal" class="sidebar-upload-button" type="button">
+            <span aria-hidden="true">+</span>
+            Upload CSV
+          </button>
+          <small>Demo holdings only. No brokerage login.</small>
+        </div>
+
+        <div class="method">
+          <div class="section-title">Loop</div>
+          <ol>
+            <li>Run monthly review</li>
+            <li>Fetch public quotes</li>
+            <li>Interpret signals</li>
+            <li>Draft review packet</li>
+            <li>Human approves next step</li>
+          </ol>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1>Monthly Portfolio Review</h1>
+            <p id="profileLine">Investor profile loading...</p>
+          </div>
+          <div class="topbar-actions">
+            <select id="profileSelect" aria-label="Select investor profile"></select>
+            <button id="runReview" class="primary-button">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M6 4.5 15 10l-9 5.5v-11Z" />
+              </svg>
+              Run monthly review
+            </button>
+            <span id="runStatus" class="run-status" aria-live="polite">Ready</span>
+          </div>
+        </header>
+
+        <section class="summary-grid" aria-label="Portfolio overview">
+          <article class="metric">
+            <span>Demo portfolio value</span>
+            <strong id="totalValue">$0</strong>
+            <small id="monthlyChange">0.0% month over month</small>
+          </article>
+          <article class="metric">
+            <span>Advisor review</span>
+            <strong id="advisorCount">0</strong>
+            <small>Draft requires approval</small>
+          </article>
+          <article class="metric">
+            <span>Watch</span>
+            <strong id="watchCount">0</strong>
+            <small>Monitor, no advice</small>
+          </article>
+          <article class="metric">
+            <span>Context missing</span>
+            <strong id="missingCount">0</strong>
+            <small>Data gap surfaced</small>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <div class="left-stack">
+            <section class="panel allocation-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Allocation Snapshot</h2>
+                  <p>Demo positions enriched with public quote data.</p>
+                </div>
+                <span class="status-pill complete">Live public prices</span>
+              </div>
+              <div class="allocation-body">
+                <div class="donut" id="donutChart" role="img" aria-label="Demo allocation chart"></div>
+                <div class="legend" id="allocationLegend"></div>
+              </div>
+            </section>
+
+            <section class="panel table-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Holdings Triage</h2>
+                  <p>Labels combine public market movement, allocation drift, and context availability.</p>
+                </div>
+                <div class="segmented" role="group" aria-label="Filter holdings">
+                  <button class="filter active" data-filter="all">All</button>
+                  <button class="filter" data-filter="Advisor review recommended">Advisor</button>
+                  <button class="filter" data-filter="Watch">Watch</button>
+                  <button class="filter" data-filter="Context missing">Gaps</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Holding</th>
+                      <th>Move</th>
+                      <th>Context</th>
+                      <th>Attention label</th>
+                      <th>Review status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="holdingsBody"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <aside class="right-stack">
+            <section class="panel detail-panel">
+              <div class="panel-heading compact">
+                <div>
+                  <h2>Holding Detail</h2>
+                  <p id="selectedMeta">Select a row to inspect reasoning.</p>
+                </div>
+              </div>
+              <div id="detailContent"></div>
+            </section>
+
+            <section class="panel question-panel">
+              <div class="panel-heading compact">
+                <div>
+                  <h2>Ask During Review</h2>
+                  <p>Risky advice requests must be refused.</p>
+                </div>
+              </div>
+              <textarea id="userQuestion" rows="3" aria-label="User review question"></textarea>
+              <button id="askAgent" class="secondary-button">Ask agent</button>
+              <div id="agentResponse" class="agent-response"></div>
+            </section>
+
+            <section class="panel escalation-panel">
+              <div class="panel-heading compact">
+                <div>
+                  <h2>Advisor Escalation Draft</h2>
+                  <p>Nothing is sent without human approval.</p>
+                </div>
+              </div>
+              <div id="draftBody" class="draft-body"></div>
+              <div class="approval-actions">
+                <button id="editDraft" class="secondary-button">Edit</button>
+                <button id="approveDraft" class="approve-button">Approve</button>
+                <button id="rejectDraft" class="reject-button">Reject</button>
+              </div>
+              <div id="approvalState" class="approval-state">Human approval required</div>
+            </section>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <div id="uploadModal" class="modal-backdrop is-hidden" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+        <div class="modal-heading">
+          <div>
+            <h2 id="uploadTitle">Upload Demo CSV</h2>
+            <p>Mapped tickers are enriched with public quote data. No brokerage login.</p>
+          </div>
+          <button id="closeUploadModal" class="icon-button" type="button" aria-label="Close upload dialog">x</button>
+        </div>
+
+        <div class="modal-actions">
+          <label class="file-choice" for="csvUpload">
+            <input id="csvUpload" type="file" accept=".csv,text/csv" />
+            Choose CSV
+          </label>
+          <button id="loadSampleUpload" class="secondary-button" type="button">Load sample</button>
+        </div>
+
+        <p id="uploadStatus" class="upload-status">Choose a demo holdings CSV or load the built-in sample packet.</p>
+      </section>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
