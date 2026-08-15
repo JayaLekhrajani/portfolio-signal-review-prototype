@@ -5,19 +5,8 @@ const DATA_URLS = {
 };
 
 const REQUIRED_INPUT_COLUMNS = [
-  "holding_id",
-  "holding_name",
-  "asset_type",
   "current_value_usd",
-  "portfolio_pct",
   "target_pct",
-  "monthly_change_pct",
-  "weekly_change_pct",
-  "volatility_label",
-  "sentiment_label",
-  "news_headline_1",
-  "news_headline_2",
-  "user_question",
 ];
 
 const ADVANCED_SAMPLE_CSV = `input_id,trigger_type,review_date,profile_id,holding_id,holding_name,asset_type,current_value_usd,portfolio_pct,target_pct,monthly_change_pct,weekly_change_pct,volatility_label,sentiment_label,news_headline_1,news_headline_2,user_question,expected_attention_label,expected_escalation,ticker_symbol
@@ -104,6 +93,7 @@ function money(value) {
 
 function pct(value) {
   const number = Number(value);
+  if (!Number.isFinite(number)) return "Missing";
   const sign = number > 0 ? "+" : "";
   return `${sign}${number.toFixed(1)}%`;
 }
@@ -147,7 +137,7 @@ function classify(input) {
   }
 
   if (gaps.length && !severeNumericRisk) {
-    label = "Not assessed";
+    label = "Context missing";
     reasons.push("Available numeric signals are not severe enough to escalate without the missing context.");
   } else if (hasAdviceRequest(question) && /(buy|sell|rebalance|increase|decrease|timing|time|hold)/i.test(question)) {
     label = input.expected_attention_label === "Watch" ? "Watch" : "Advisor review recommended";
@@ -187,7 +177,7 @@ function classify(input) {
   }
 
   if (input.input_id === "WIN-013") {
-    label = "Not assessed";
+    label = "Context missing";
     escalation = false;
   }
 
@@ -215,10 +205,7 @@ function scenarioInputs() {
   };
 
   if (state.scenario === "monthly") {
-    const extras = state.inputs.filter((input) => ["WIN-011", "WIN-012", "WIN-013"].includes(input.input_id));
-    return [...profileInputs, ...extras].filter(
-      (input, index, array) => array.findIndex((item) => item.input_id === input.input_id) === index
-    );
+    return profileInputs;
   }
 
   const ids = scenarioMap[state.scenario] || [];
@@ -251,9 +238,8 @@ function runReview(options = {}) {
 }
 
 function runMonthlyReview() {
-  setScenario("monthly");
   resetFilter();
-  state.runMessage = "Running monthly review...";
+  state.runMessage = "Refreshing public quotes...";
   renderRunStatus();
   window.setTimeout(() => {
     runReview({ userInitiated: true });
@@ -279,7 +265,7 @@ function renderSummary() {
 
   document.querySelector("#profileLine").textContent =
     state.scenario === "advancedUpload"
-      ? "Advanced demo · uploaded/demo positions · live public prices when available"
+      ? "My live list · manual or CSV positions · live public prices when available"
       : profile
         ? `${profile.fake_name} · ${profile.investing_goal} · live public prices`
         : "Investor profile";
@@ -335,10 +321,40 @@ function renderAllocation() {
     .join("");
 }
 
+function renderMovementBars() {
+  const rows = [...state.reviewed]
+    .filter((item) => Number.isFinite(Number(item.weekly_change_pct)))
+    .sort((a, b) => Math.abs(Number(b.weekly_change_pct)) - Math.abs(Number(a.weekly_change_pct)))
+    .slice(0, 5);
+  const maxMove = Math.max(...rows.map((item) => Math.abs(Number(item.weekly_change_pct))), 1);
+
+  document.querySelector("#movementBars").innerHTML = rows.length
+    ? rows
+        .map((item) => {
+          const move = Number(item.weekly_change_pct);
+          const width = Math.max(8, (Math.abs(move) / maxMove) * 100);
+          const tone = move < 0 ? "negative" : move > 0 ? "positive" : "flat";
+          return `
+            <div class="movement-row">
+              <div>
+                <strong>${displayHoldingName(item)}</strong>
+                <span>${item.ticker_symbol || "No ticker"} · ${item.attention_label}</span>
+              </div>
+              <div class="movement-track" aria-hidden="true">
+                <span class="${tone}" style="width:${width}%"></span>
+              </div>
+              <strong class="move ${tone === "negative" ? "negative" : tone === "positive" ? "positive" : ""}">${pct(move)}</strong>
+            </div>
+          `;
+        })
+        .join("")
+    : `<div class="empty-note">No market movement data is available for this holding list.</div>`;
+}
+
 function classForLabel(label) {
   if (label === "Advisor review recommended") return "advisor";
   if (label === "Watch") return "watch";
-  if (label === "Not assessed") return "not-assessed";
+  if (label === "Context missing" || label === "Not assessed") return "not-assessed";
   return "no-action";
 }
 
@@ -384,7 +400,7 @@ function renderTable() {
       const name = displayHoldingName(item);
       const selected = item.holding_id === state.selectedId ? "selected" : "";
       const movementClass = Number(item.weekly_change_pct) < 0 ? "negative" : Number(item.weekly_change_pct) > 0 ? "positive" : "";
-      const contextText = item.review_status === "Context missing" ? "Missing context" : item.sentiment_label || "Unknown";
+      const contextText = item.review_status === "Context missing" ? "Context missing" : item.sentiment_label || "Unknown";
       const headline = item.market_data_status === "live"
         ? `${item.ticker_symbol} · ${money(item.market_price)} · ${item.market_timestamp || "public quote"}`
         : item.news_headline_1 || "No public quote/context available";
@@ -473,10 +489,52 @@ function renderDraft() {
   `;
 }
 
+function createReviewPacket() {
+  const profile = state.profiles.find((item) => item.profile_id === state.profileId);
+  const total = state.reviewed.reduce((sum, item) => sum + Number(item.current_value_usd || 0), 0);
+  const advisor = state.reviewed.filter((item) => item.attention_label === "Advisor review recommended");
+  const watch = state.reviewed.filter((item) => item.attention_label === "Watch");
+  const gaps = state.reviewed.filter((item) => item.review_status === "Context missing");
+  const rows = state.reviewed.map((item) => {
+    const drift = (Number(item.portfolio_pct) - Number(item.target_pct)).toFixed(1);
+    return `- ${displayHoldingName(item)}${item.ticker_symbol ? ` (${item.ticker_symbol})` : ""}: ${item.attention_label}; move ${pct(item.weekly_change_pct)}; drift ${drift} pts; review status ${item.review_status}.`;
+  });
+
+  return [
+    "Live Portfolio Review",
+    "",
+    `Generated: ${new Date().toLocaleString()}`,
+    `Investor: ${state.scenario === "advancedUpload" ? "My live list" : profile?.fake_name || "Demo investor"}`,
+    `Portfolio value shown: ${money(total)}`,
+    "",
+    "Neutral summary",
+    `The review checked ${state.reviewed.length} holding(s) using manually provided/demo position values and public quote data where available. It found ${advisor.length} advisor review item(s), ${watch.length} watch item(s), and ${gaps.length} context gap(s).`,
+    "",
+    "Holding labels",
+    ...rows,
+    "",
+    "Human boundary",
+    "This packet is not financial advice. It does not recommend buying, selling, holding, rebalancing, increasing, decreasing, or timing investments. Any investment decision should be discussed with a licensed human advisor.",
+  ].join("\n");
+}
+
+function downloadReviewPacket() {
+  if (!state.reviewed.length) return;
+  const blob = new Blob([createReviewPacket()], { type: "text/markdown;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `live-portfolio-review-${new Date().toISOString().slice(0, 10)}.md`;
+  document.body.appendChild(link);
+  link.click();
+  URL.revokeObjectURL(link.href);
+  link.remove();
+}
+
 function render() {
   renderRunStatus();
   renderSummary();
   renderAllocation();
+  renderMovementBars();
   renderTable();
   renderDetail();
   renderDraft();
@@ -488,14 +546,40 @@ function normalizeAdvancedRows(rows) {
     throw new Error(`Missing required column(s): ${missingColumns.join(", ")}`);
   }
 
-  return rows.map((row, index) => ({
+  return recalculatePortfolioPercents(
+    rows.map((row, index) => {
+      const ticker = (row.ticker_symbol || row.market_symbol || row.holding_name || `HOLDING-${index + 1}`).trim().toUpperCase();
+      return {
+        ...row,
+        input_id: row.input_id || `ADV-UPLOAD-${String(index + 1).padStart(3, "0")}`,
+        trigger_type: row.trigger_type || "csv_upload",
+        review_date: row.review_date || new Date().toISOString().slice(0, 10),
+        profile_id: row.profile_id || state.profileId,
+        holding_id: row.holding_id || `CUSTOM-${ticker}-${index + 1}`,
+        holding_name: row.holding_name || ticker,
+        asset_type: row.asset_type || "ETF",
+        portfolio_pct: row.portfolio_pct || "0",
+        monthly_change_pct: row.monthly_change_pct || row.weekly_change_pct || "0",
+        weekly_change_pct: row.weekly_change_pct || row.monthly_change_pct || "0",
+        volatility_label: row.volatility_label || "",
+        sentiment_label: row.sentiment_label || "",
+        news_headline_1: row.news_headline_1 || "",
+        news_headline_2: row.news_headline_2 || "",
+        user_question: row.user_question || `What changed in ${ticker} this month?`,
+        expected_attention_label: row.expected_attention_label || "",
+        expected_escalation: row.expected_escalation || "",
+        ticker_symbol: row.ticker_symbol || row.market_symbol || ticker,
+      };
+    })
+  );
+}
+
+function recalculatePortfolioPercents(rows) {
+  const total = rows.reduce((sum, row) => sum + Number(row.current_value_usd || 0), 0);
+  if (!total) return rows;
+  return rows.map((row) => ({
     ...row,
-    input_id: row.input_id || `ADV-UPLOAD-${String(index + 1).padStart(3, "0")}`,
-    trigger_type: row.trigger_type || "csv_upload",
-    review_date: row.review_date || new Date().toISOString().slice(0, 10),
-    profile_id: row.profile_id || state.profileId,
-    expected_attention_label: row.expected_attention_label || "",
-    expected_escalation: row.expected_escalation || "",
+    portfolio_pct: ((Number(row.current_value_usd || 0) / total) * 100).toFixed(1),
   }));
 }
 
@@ -531,6 +615,54 @@ async function loadAdvancedCSV(text, sourceLabel) {
   runReview();
 }
 
+function rowToCSV(row) {
+  const headers = Object.keys(row);
+  const escapeValue = (value) => {
+    const stringValue = String(value ?? "");
+    return /[",\n\r]/.test(stringValue) ? `"${stringValue.replaceAll('"', '""')}"` : stringValue;
+  };
+  return [headers.join(","), headers.map((header) => escapeValue(row[header])).join(",")].join("\n");
+}
+
+async function addManualHolding(form) {
+  const formData = new FormData(form);
+  const ticker = String(formData.get("ticker") || "").trim().toUpperCase();
+  if (!ticker) throw new Error("Ticker is required.");
+
+  const row = {
+    input_id: `MAN-${Date.now()}`,
+    trigger_type: "manual_entry",
+    review_date: new Date().toISOString().slice(0, 10),
+    profile_id: state.profileId,
+    holding_id: `MAN-${ticker}-${Date.now()}`,
+    holding_name: ticker,
+    asset_type: String(formData.get("assetType") || "ETF"),
+    current_value_usd: String(formData.get("value") || ""),
+    portfolio_pct: "0",
+    target_pct: String(formData.get("target") || ""),
+    monthly_change_pct: "0",
+    weekly_change_pct: "0",
+    volatility_label: String(formData.get("volatility") || ""),
+    sentiment_label: String(formData.get("sentiment") || ""),
+    news_headline_1: String(formData.get("context") || "").trim(),
+    news_headline_2: "Manual holding entry enriched with public quote data",
+    user_question: `What changed in ${ticker} this month?`,
+    expected_attention_label: "",
+    expected_escalation: "",
+    ticker_symbol: ticker,
+  };
+
+  const enrichedText = await enrichUploadedCSV(rowToCSV(row));
+  const [enrichedRow] = normalizeAdvancedRows(parseCSV(enrichedText));
+  state.advancedInputs = recalculatePortfolioPercents([...state.advancedInputs, enrichedRow]);
+  state.runMessage = `Added ${ticker} to live list`;
+  state.uploadMessage = `${ticker} added. Public quote data loads when available.`;
+  setScenario("advancedUpload");
+  closeUploadModal();
+  form.reset();
+  runReview();
+}
+
 function bindEvents() {
   document.querySelector("#profileSelect").addEventListener("change", (event) => {
     state.profileId = event.target.value;
@@ -541,8 +673,20 @@ function bindEvents() {
   document.querySelector("#runReview").addEventListener("click", runMonthlyReview);
 
   document.querySelector("#openUploadModal").addEventListener("click", openUploadModal);
+  document.querySelector("#openManualModal").addEventListener("click", openUploadModal);
 
   document.querySelector("#closeUploadModal").addEventListener("click", closeUploadModal);
+
+  document.querySelector("#manualHoldingForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    try {
+      document.querySelector("#uploadStatus").textContent = "Adding holding and fetching public quote...";
+      await addManualHolding(event.currentTarget);
+    } catch (error) {
+      state.uploadMessage = `Holding was not added: ${error.message}`;
+      document.querySelector("#uploadStatus").textContent = state.uploadMessage;
+    }
+  });
 
   document.querySelector("#uploadModal").addEventListener("click", (event) => {
     if (event.target.id === "uploadModal") closeUploadModal();
@@ -624,6 +768,8 @@ function bindEvents() {
     node.className = "approval-state rejected";
     node.textContent = "Draft rejected by human reviewer";
   });
+
+  document.querySelector("#downloadReview").addEventListener("click", downloadReviewPacket);
 }
 
 async function init() {

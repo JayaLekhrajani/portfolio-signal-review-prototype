@@ -1,8 +1,8 @@
-# Portfolio Signal Review
+# Live Portfolio Review
 
-Portfolio Signal Review is a local web prototype for reviewing a demo investment portfolio with public market quote data.
+Live Portfolio Review is a Version 1 working prototype for reviewing a manually entered or CSV-uploaded investment holding list with public market quote data.
 
-The app does not connect to Vanguard or any brokerage account. It uses demo position values and enriches mapped ticker symbols with public quote data from a small local Node backend.
+The app does not connect to Vanguard or any brokerage account. Users provide position values and tickers manually or through CSV, and the local Node backend enriches those tickers with public quote data.
 
 ## Screenshots
 
@@ -20,12 +20,15 @@ Mobile layout:
 
 ## What The Prototype Shows
 
-- Demo portfolio overview with current public quote movement
+- Manual ticker entry for a live review list
+- CSV upload flow for sample or user-provided holdings
+- Portfolio overview with current public quote movement
+- Allocation and market-move charts
 - Holdings triage table with attention labels
 - Holding detail and reasoning panel
 - Advisor escalation draft that requires human approval
-- CSV upload flow for demo holdings
-- Public quote enrichment for mapped tickers
+- Downloadable neutral review packet
+- Public quote enrichment for mapped or entered tickers
 - Refusal behavior for buy, sell, rebalance, timing, increase, decrease, or hold advice requests
 
 ## Run Locally
@@ -46,7 +49,7 @@ If port `5174` is busy, the server automatically tries the next available port a
 
 ## CSV Upload Sample
 
-Use this sample file to test the Advanced Demo upload flow:
+Use this sample file to test the CSV upload flow:
 
 ```text
 data/portfolio_signal_review/mock_upload_sample.csv
@@ -58,6 +61,17 @@ In the app:
 2. Click `Choose CSV`.
 3. Select `data/portfolio_signal_review/mock_upload_sample.csv`.
 4. The backend enriches mapped tickers with public quote data.
+
+At minimum, a custom CSV needs:
+
+```csv
+ticker_symbol,current_value_usd,target_pct
+AAPL,25000,10
+VTI,85000,40
+BND,45000,25
+```
+
+Optional columns such as `asset_type`, `sentiment_label`, `volatility_label`, and `news_headline_1` improve the attention labels.
 
 ## Market Data
 
@@ -71,7 +85,7 @@ The backend fetches public quote data for mapped tickers and adds fields such as
 - `market_data_source`
 - `market_data_status`
 
-The demo portfolio values and allocation percentages are not brokerage data.
+The position values and allocation percentages are supplied by the user or demo CSV. They are not brokerage data.
 
 ## Important Boundary
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Portfolio Signal Review</title>
+    <title>Live Portfolio Review</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23071a3b'/%3E%3Cpath d='M6 20h5l3-10 5 14 3-9h4' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,7 +20,7 @@
             </svg>
           </div>
           <div>
-            <strong>Portfolio Signal Review</strong>
+            <strong>Live Portfolio Review</strong>
             <span>Live market triage</span>
           </div>
         </div>
@@ -37,46 +37,29 @@
           <button class="scenario" data-scenario="advancedUpload">
             <span class="scenario-icon advanced">A</span>
             <span>
-              <strong>Advanced demo</strong>
-              <small>Quote-enriched CSV</small>
-            </span>
-          </button>
-          <button class="scenario" data-scenario="sameDropNeutral">
-            <span class="scenario-icon watch">8</span>
-            <span>
-              <strong>8% drop: neutral</strong>
-              <small>Context changes verdict</small>
-            </span>
-          </button>
-          <button class="scenario" data-scenario="sameDropNegative">
-            <span class="scenario-icon alert">8</span>
-            <span>
-              <strong>8% drop: negative</strong>
-              <small>Advisor review case</small>
-            </span>
-          </button>
-          <button class="scenario" data-scenario="missingContext">
-            <span class="scenario-icon missing">?</span>
-            <span>
-              <strong>Missing news feed</strong>
-              <small>Data gap, not Watch</small>
+              <strong>My live list</strong>
+              <small>Manual or CSV holdings</small>
             </span>
           </button>
           <button class="scenario" data-scenario="adviceRequest">
             <span class="scenario-icon alert">!</span>
             <span>
-              <strong>Advice request</strong>
-              <small>Boundary refusal</small>
+              <strong>Boundary check</strong>
+              <small>Advice refusal test</small>
             </span>
           </button>
         </div>
 
         <div class="sidebar-upload">
-          <button id="openUploadModal" class="sidebar-upload-button" type="button">
+          <button id="openManualModal" class="sidebar-upload-button" type="button">
             <span aria-hidden="true">+</span>
+            Add holding
+          </button>
+          <button id="openUploadModal" class="sidebar-upload-button" type="button">
+            <span aria-hidden="true">^</span>
             Upload CSV
           </button>
-          <small>Demo holdings only. No brokerage login.</small>
+          <small>Manual entries or sample CSV only. No brokerage login.</small>
         </div>
 
         <div class="method">
@@ -94,7 +77,7 @@
       <main class="main">
         <header class="topbar">
           <div>
-            <h1>Monthly Portfolio Review</h1>
+            <h1>Live Portfolio Review</h1>
             <p id="profileLine">Investor profile loading...</p>
           </div>
           <div class="topbar-actions">
@@ -103,7 +86,7 @@
               <svg viewBox="0 0 20 20" aria-hidden="true">
                 <path d="M6 4.5 15 10l-9 5.5v-11Z" />
               </svg>
-              Run monthly review
+              Run review
             </button>
             <span id="runStatus" class="run-status" aria-live="polite">Ready</span>
           </div>
@@ -146,6 +129,17 @@
                 <div class="donut" id="donutChart" role="img" aria-label="Demo allocation chart"></div>
                 <div class="legend" id="allocationLegend"></div>
               </div>
+            </section>
+
+            <section class="panel movement-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Market Move Snapshot</h2>
+                  <p>Largest current quote moves in the selected holding list.</p>
+                </div>
+                <span class="status-pill complete">Latest quote data</span>
+              </div>
+              <div id="movementBars" class="movement-body"></div>
             </section>
 
             <section class="panel table-panel">
@@ -214,6 +208,7 @@
                 <button id="approveDraft" class="approve-button">Approve</button>
                 <button id="rejectDraft" class="reject-button">Reject</button>
               </div>
+              <button id="downloadReview" class="secondary-button" type="button">Download review</button>
               <div id="approvalState" class="approval-state">Human approval required</div>
             </section>
           </aside>
@@ -225,11 +220,62 @@
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
         <div class="modal-heading">
           <div>
-            <h2 id="uploadTitle">Upload Demo CSV</h2>
-            <p>Mapped tickers are enriched with public quote data. No brokerage login.</p>
+            <h2 id="uploadTitle">Add Holdings</h2>
+            <p>Enter a ticker manually or upload a holdings CSV. Public quotes are enriched by the local backend.</p>
           </div>
           <button id="closeUploadModal" class="icon-button" type="button" aria-label="Close upload dialog">x</button>
         </div>
+
+        <form id="manualHoldingForm" class="manual-form">
+          <div class="form-grid">
+            <label>
+              <span>Ticker</span>
+              <input id="manualTicker" name="ticker" type="text" autocomplete="off" placeholder="AAPL" required />
+            </label>
+            <label>
+              <span>Asset type</span>
+              <select id="manualAssetType" name="assetType">
+                <option value="stock">Stock</option>
+                <option value="ETF">ETF</option>
+                <option value="bond">Bond ETF</option>
+              </select>
+            </label>
+            <label>
+              <span>Position value</span>
+              <input id="manualValue" name="value" type="number" min="1" step="1" placeholder="25000" required />
+            </label>
+            <label>
+              <span>Target %</span>
+              <input id="manualTarget" name="target" type="number" min="0" max="100" step="0.1" placeholder="10" required />
+            </label>
+            <label>
+              <span>Sentiment</span>
+              <select id="manualSentiment" name="sentiment">
+                <option value="">Missing</option>
+                <option value="neutral">Neutral</option>
+                <option value="mixed">Mixed</option>
+                <option value="negative">Negative</option>
+                <option value="positive">Positive</option>
+              </select>
+            </label>
+            <label>
+              <span>Volatility</span>
+              <select id="manualVolatility" name="volatility">
+                <option value="">Missing</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Optional context note</span>
+            <input id="manualContext" name="context" type="text" placeholder="Earnings in line, sector news mixed" />
+          </label>
+          <button class="primary-button manual-submit" type="submit">Add live holding</button>
+        </form>
+
+        <div class="modal-divider">or upload a CSV</div>
 
         <div class="modal-actions">
           <label class="file-choice" for="csvUpload">

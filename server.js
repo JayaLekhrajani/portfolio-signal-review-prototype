@@ -192,10 +192,10 @@ async function enrichRows(rows) {
         weekly_change_pct: hasLiveMove ? String(quote.changePct) : row.weekly_change_pct,
         monthly_change_pct: hasLiveMove ? String(quote.changePct) : row.monthly_change_pct,
         news_headline_1: hasLiveMove
-          ? `${quote.symbol} public quote: ${quote.changePct >= 0 ? "up" : "down"} ${Math.abs(quote.changePct).toFixed(2)}% at ${quote.price.toFixed(2)}`
+          ? row.news_headline_1 || `${quote.symbol} public quote: ${quote.changePct >= 0 ? "up" : "down"} ${Math.abs(quote.changePct).toFixed(2)}% at ${quote.price.toFixed(2)}`
           : row.news_headline_1,
         news_headline_2: hasLiveMove
-          ? `${quote.source}${quote.timestamp ? ` · ${quote.timestamp}` : ""}`
+          ? `${quote.symbol} public quote: ${quote.changePct >= 0 ? "up" : "down"} ${Math.abs(quote.changePct).toFixed(2)}% at ${quote.price.toFixed(2)} · ${quote.source}${quote.timestamp ? ` · ${quote.timestamp}` : ""}`
           : row.news_headline_2,
       };
     })

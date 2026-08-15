@@ -34,7 +34,8 @@ body {
 
 button,
 select,
-textarea {
+textarea,
+input {
   font: inherit;
 }
 
@@ -178,6 +179,8 @@ button {
 .sidebar-upload {
   border-top: 1px solid var(--border);
   padding-top: 14px;
+  display: grid;
+  gap: 8px;
 }
 
 .sidebar-upload-button {
@@ -268,7 +271,8 @@ h1 {
 }
 
 select,
-textarea {
+textarea,
+input {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #fff;
@@ -287,6 +291,12 @@ textarea {
   min-height: 78px;
   padding: 10px;
   line-height: 1.45;
+}
+
+input {
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
 }
 
 .primary-button,
@@ -357,12 +367,56 @@ textarea {
 }
 
 .modal {
-  width: min(440px, 100%);
+  width: min(620px, 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
   padding: 16px;
+}
+
+.manual-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.manual-form label span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.manual-submit {
+  width: 100%;
+}
+
+.modal-divider {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 10px;
+  margin-top: 16px;
+  text-transform: uppercase;
+}
+
+.modal-divider::before,
+.modal-divider::after {
+  background: var(--border);
+  content: "";
+  flex: 1;
+  height: 1px;
 }
 
 .modal-heading {
@@ -600,6 +654,62 @@ h2 {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+}
+
+.movement-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.movement-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(160px, 1fr) 64px;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.movement-row strong,
+.movement-row span {
+  display: block;
+}
+
+.movement-row span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.movement-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--gray-soft);
+  overflow: hidden;
+}
+
+.movement-track span {
+  display: block;
+  height: 100%;
+  margin: 0;
+}
+
+.movement-track .positive {
+  background: var(--green);
+}
+
+.movement-track .negative {
+  background: var(--red);
+}
+
+.movement-track .flat {
+  background: var(--muted);
+}
+
+.empty-note {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .segmented {
@@ -886,6 +996,11 @@ tbody tr.selected {
   }
 
   .modal-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid,
+  .movement-row {
     grid-template-columns: 1fr;
   }
 
