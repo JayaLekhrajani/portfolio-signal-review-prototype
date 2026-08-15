@@ -16,6 +16,9 @@ ADV-003,upload_demo,2026-08-01,USR-001,ADV-103,Industrial Stock,stock,68400,6.9,
 ADV-004,upload_demo,2026-08-01,USR-001,ADV-104,International ETF,ETF,96300,18.4,18.0,0.2,0.1,,,,What changed in this fund?,Not assessed,false,VXUS
 ADV-005,upload_demo,2026-08-01,USR-001,ADV-105,Bond ETF,ETF,135800,27.5,28.0,0.5,0.2,low,neutral,Public quote context should be loaded by the backend,Demo position value is not from a brokerage account,Should I increase this bond fund?,Advisor review recommended,true,BND`;
 
+const DEFAULT_MODAL_MESSAGE = "Choose a holdings CSV or add a ticker manually. Public quotes load when available.";
+const ADD_HOLDING_MESSAGE = "Enter a ticker, position value, and target allocation. No brokerage login is used.";
+
 const colors = {
   stock: "#1d5fd0",
   ETF: "#19a7ce",
@@ -34,7 +37,6 @@ let state = {
   scenario: "monthly",
   filter: "all",
   runMessage: "Ready",
-  uploadMessage: "Choose a demo holdings CSV or load the built-in sample packet.",
 };
 
 function parseCSV(text) {
@@ -583,9 +585,11 @@ function recalculatePortfolioPercents(rows) {
   }));
 }
 
-function openUploadModal() {
+function openUploadModal(message = DEFAULT_MODAL_MESSAGE) {
+  document.querySelector("#manualHoldingForm").reset();
+  document.querySelector("#csvUpload").value = "";
   document.querySelector("#uploadModal").classList.remove("is-hidden");
-  document.querySelector("#uploadStatus").textContent = state.uploadMessage;
+  document.querySelector("#uploadStatus").textContent = message;
 }
 
 function closeUploadModal() {
@@ -609,7 +613,6 @@ async function loadAdvancedCSV(text, sourceLabel) {
 
   state.advancedInputs = rows;
   state.runMessage = `Loaded ${rows.length} CSV rows`;
-  state.uploadMessage = `${rows.length} holding(s) loaded from ${sourceLabel}. Public quotes load for mapped tickers.`;
   setScenario("advancedUpload");
   closeUploadModal();
   runReview();
@@ -656,7 +659,6 @@ async function addManualHolding(form) {
   const [enrichedRow] = normalizeAdvancedRows(parseCSV(enrichedText));
   state.advancedInputs = recalculatePortfolioPercents([...state.advancedInputs, enrichedRow]);
   state.runMessage = `Added ${ticker} to live list`;
-  state.uploadMessage = `${ticker} added. Public quote data loads when available.`;
   setScenario("advancedUpload");
   closeUploadModal();
   form.reset();
@@ -672,8 +674,8 @@ function bindEvents() {
 
   document.querySelector("#runReview").addEventListener("click", runMonthlyReview);
 
-  document.querySelector("#openUploadModal").addEventListener("click", openUploadModal);
-  document.querySelector("#openManualModal").addEventListener("click", openUploadModal);
+  document.querySelector("#openUploadModal").addEventListener("click", () => openUploadModal(DEFAULT_MODAL_MESSAGE));
+  document.querySelector("#openManualModal").addEventListener("click", () => openUploadModal(ADD_HOLDING_MESSAGE));
 
   document.querySelector("#closeUploadModal").addEventListener("click", closeUploadModal);
 
@@ -683,8 +685,7 @@ function bindEvents() {
       document.querySelector("#uploadStatus").textContent = "Adding holding and fetching public quote...";
       await addManualHolding(event.currentTarget);
     } catch (error) {
-      state.uploadMessage = `Holding was not added: ${error.message}`;
-      document.querySelector("#uploadStatus").textContent = state.uploadMessage;
+      document.querySelector("#uploadStatus").textContent = `Holding was not added: ${error.message}`;
     }
   });
 
@@ -696,8 +697,7 @@ function bindEvents() {
     try {
       await loadAdvancedCSV(ADVANCED_SAMPLE_CSV, "built-in sample CSV");
     } catch (error) {
-      state.uploadMessage = `CSV was not loaded: ${error.message}`;
-      document.querySelector("#uploadStatus").textContent = state.uploadMessage;
+      document.querySelector("#uploadStatus").textContent = `CSV was not loaded: ${error.message}`;
     }
   });
 
@@ -708,8 +708,7 @@ function bindEvents() {
     try {
       await loadAdvancedCSV(await file.text(), file.name);
     } catch (error) {
-      state.uploadMessage = `CSV was not loaded: ${error.message}`;
-      document.querySelector("#uploadStatus").textContent = state.uploadMessage;
+      document.querySelector("#uploadStatus").textContent = `CSV was not loaded: ${error.message}`;
     } finally {
       event.target.value = "";
     }
